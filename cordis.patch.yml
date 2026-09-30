@@ -1,0 +1,6 @@
+# One Host row. The browser half travels inside the same package as its
+# `./client` export, which the client-modules scan picks up from `dsh.client`.
+- insert:
+    - id: context-explorer
+      name: dsh-context-explorer
+      config: {}

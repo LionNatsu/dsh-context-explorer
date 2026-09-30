@@ -1,0 +1,178 @@
+{
+  "source": {
+    "encoder": "deepseek-ai/DeepSeek-V4.1-Flash — encoding/encoding.py (the official open-weights encoder)",
+    "renderer": "deepseek-recipe — deepseek-recipe-encoding/src/v4/mod.rs and v4/dsv41.rs (the serving renderer)",
+    "note": "expected[] is output of the encoder named above; regenerate with `node tools/prompt-golden.mjs --regenerate --encoder <path to encoding.py>`",
+    "generated": "2026-09-30"
+  },
+  "fixtures": [
+    {
+      "name": "thinking-with-one-tool-call",
+      "thinking": true,
+      "effort": "max",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get the weather",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "City name"
+              }
+            },
+            "required": [
+              "city"
+            ]
+          }
+        }
+      ],
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent."
+        },
+        {
+          "role": "user",
+          "content": "weather in Beijing?"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "reasoning": "I should call the tool.",
+          "toolCalls": [
+            {
+              "id": "call_1",
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Beijing\"}"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "sunny, 24C",
+          "toolCallId": "call_1"
+        },
+        {
+          "role": "user",
+          "content": "thanks"
+        }
+      ]
+    },
+    {
+      "name": "two-calls-two-results-mid-system-non-ascii",
+      "thinking": true,
+      "effort": "max",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get the weather",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "City name"
+              }
+            },
+            "required": [
+              "city"
+            ]
+          }
+        }
+      ],
+      "messages": [
+        {
+          "role": "system",
+          "content": "System one."
+        },
+        {
+          "role": "user",
+          "content": "two cities 北京 and 上海"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "reasoning": "two calls",
+          "toolCalls": [
+            {
+              "id": "c1",
+              "name": "get_weather",
+              "arguments": "{\"city\": \"北京\", \"days\": 2}"
+            },
+            {
+              "id": "c2",
+              "name": "get_weather",
+              "arguments": "{\"city\": \"上海\"}"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "北京 sunny",
+          "toolCallId": "c1"
+        },
+        {
+          "role": "tool",
+          "content": "上海 rain",
+          "toolCallId": "c2"
+        },
+        {
+          "role": "system",
+          "content": "Mid update."
+        },
+        {
+          "role": "user",
+          "content": "done"
+        }
+      ]
+    },
+    {
+      "name": "chat-mode-answer-and-reasoning-less-turn",
+      "thinking": false,
+      "effort": null,
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get the weather",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "City name"
+              }
+            },
+            "required": [
+              "city"
+            ]
+          }
+        }
+      ],
+      "messages": [
+        {
+          "role": "system",
+          "content": "S."
+        },
+        {
+          "role": "user",
+          "content": "hi"
+        },
+        {
+          "role": "assistant",
+          "content": "hello"
+        },
+        {
+          "role": "user",
+          "content": "and now?"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "thinking-with-one-tool-call": "<｜begin▁of▁sentence｜><｜System｜>Reasoning Effort: 100 (range 1-100, the higher the value, the more thorough the reasoning)\n\nYou are a coding agent.\n\n## Tools\n\nYou have access to a set of tools to help answer the user's question. You can invoke tools by writing a \"<｜DSML｜ calls>\" block like the following:\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name=\"$TOOL_NAME\">\n<｜DSML｜ parameter name=\"$PARAMETER_NAME\" string=\"true|false\">$PARAMETER_VALUE</｜DSML｜ parameter>\n...\n</｜DSML｜ invoke>\n<｜DSML｜ invoke name=\"$TOOL_NAME2\">\n...\n</｜DSML｜ invoke>\n</｜DSML｜ calls>\n\nString parameters should be specified as is and set `string=\"true\"`. For all other types (numbers, booleans, arrays, objects), pass the value in JSON format and set `string=\"false\"`.\n\nIf thinking_mode is enabled (triggered by <think>), you MUST output your complete reasoning inside <think>...</think> BEFORE any tool calls or final response.\n\nOtherwise, output directly after </think> with tool calls or final response.\n\n### Available Tool Schemas\n\n{\"name\": \"get_weather\", \"description\": \"Get the weather\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\", \"description\": \"City name\"}}, \"required\": [\"city\"]}}\n\nYou MUST strictly follow the above defined tool name and parameter schemas to invoke tool calls.\n<｜User｜>weather in Beijing?<｜Assistant｜><think>I should call the tool.</think>\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name=\"get_weather\">\n<｜DSML｜ parameter name=\"city\" string=\"true\">Beijing</｜DSML｜ parameter>\n</｜DSML｜ invoke>\n</｜DSML｜ calls><｜end▁of▁sentence｜><｜User｜><tool_result>sunny, 24C</tool_result>\n\nthanks<｜Assistant｜><think>",
+    "two-calls-two-results-mid-system-non-ascii": "<｜begin▁of▁sentence｜><｜System｜>Reasoning Effort: 100 (range 1-100, the higher the value, the more thorough the reasoning)\n\nSystem one.\n\n## Tools\n\nYou have access to a set of tools to help answer the user's question. You can invoke tools by writing a \"<｜DSML｜ calls>\" block like the following:\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name=\"$TOOL_NAME\">\n<｜DSML｜ parameter name=\"$PARAMETER_NAME\" string=\"true|false\">$PARAMETER_VALUE</｜DSML｜ parameter>\n...\n</｜DSML｜ invoke>\n<｜DSML｜ invoke name=\"$TOOL_NAME2\">\n...\n</｜DSML｜ invoke>\n</｜DSML｜ calls>\n\nString parameters should be specified as is and set `string=\"true\"`. For all other types (numbers, booleans, arrays, objects), pass the value in JSON format and set `string=\"false\"`.\n\nIf thinking_mode is enabled (triggered by <think>), you MUST output your complete reasoning inside <think>...</think> BEFORE any tool calls or final response.\n\nOtherwise, output directly after </think> with tool calls or final response.\n\n### Available Tool Schemas\n\n{\"name\": \"get_weather\", \"description\": \"Get the weather\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\", \"description\": \"City name\"}}, \"required\": [\"city\"]}}\n\nYou MUST strictly follow the above defined tool name and parameter schemas to invoke tool calls.\n<｜User｜>two cities 北京 and 上海<｜Assistant｜><think>two calls</think>\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name=\"get_weather\">\n<｜DSML｜ parameter name=\"city\" string=\"true\">北京</｜DSML｜ parameter>\n<｜DSML｜ parameter name=\"days\" string=\"false\">2</｜DSML｜ parameter>\n</｜DSML｜ invoke>\n<｜DSML｜ invoke name=\"get_weather\">\n<｜DSML｜ parameter name=\"city\" string=\"true\">上海</｜DSML｜ parameter>\n</｜DSML｜ invoke>\n</｜DSML｜ calls><｜end▁of▁sentence｜><｜User｜><tool_result>北京 sunny</tool_result>\n\n<tool_result>上海 rain</tool_result><｜System｜>Mid update.<｜User｜>done<｜Assistant｜><think>",
+    "chat-mode-answer-and-reasoning-less-turn": "<｜begin▁of▁sentence｜><｜System｜>S.\n\n## Tools\n\nYou have access to a set of tools to help answer the user's question. You can invoke tools by writing a \"<｜DSML｜ calls>\" block like the following:\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name=\"$TOOL_NAME\">\n<｜DSML｜ parameter name=\"$PARAMETER_NAME\" string=\"true|false\">$PARAMETER_VALUE</｜DSML｜ parameter>\n...\n</｜DSML｜ invoke>\n<｜DSML｜ invoke name=\"$TOOL_NAME2\">\n...\n</｜DSML｜ invoke>\n</｜DSML｜ calls>\n\nString parameters should be specified as is and set `string=\"true\"`. For all other types (numbers, booleans, arrays, objects), pass the value in JSON format and set `string=\"false\"`.\n\nIf thinking_mode is enabled (triggered by <think>), you MUST output your complete reasoning inside <think>...</think> BEFORE any tool calls or final response.\n\nOtherwise, output directly after </think> with tool calls or final response.\n\n### Available Tool Schemas\n\n{\"name\": \"get_weather\", \"description\": \"Get the weather\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\", \"description\": \"City name\"}}, \"required\": [\"city\"]}}\n\nYou MUST strictly follow the above defined tool name and parameter schemas to invoke tool calls.\n<｜User｜>hi<｜Assistant｜></think>hello<｜end▁of▁sentence｜><｜User｜>and now?<｜Assistant｜></think>"
+  }
+}

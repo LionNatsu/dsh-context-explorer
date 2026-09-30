@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "上下文浏览器",
+    "description": "以格点图查看会话提交给模型的上下文构成。基于 DeepSeek Harness 构建。"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Context Explorer",
+    "description": "See the context a Session submits to its model, drawn as a grid of token squares. Built on DeepSeek Harness."
+  }
+}

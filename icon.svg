@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#7c8698">
+  <!--
+    The context window as a grid of token squares, the free remainder in a
+    fainter tone: the same reading the panel gives.
+
+    The fill is explicit rather than `currentColor`, because the plugin listing
+    and the settings inventory render this file as an image, where there is no
+    inherited colour to take and `currentColor` resolves to black. The inline
+    copy in client.js keeps `currentColor`: that one is drawn inside the tab
+    chip and does inherit the chip's own hover and active colours.
+  -->
+  <rect x="3" y="4" width="5" height="4" rx="0.9" opacity="0.95"/>
+  <rect x="9.3" y="4" width="5" height="4" rx="0.9" opacity="0.95"/>
+  <rect x="15.6" y="4" width="5.4" height="4" rx="0.9" opacity="0.95"/>
+  <rect x="3" y="9.3" width="5" height="4" rx="0.9" opacity="0.8"/>
+  <rect x="9.3" y="9.3" width="5" height="4" rx="0.9" opacity="0.95"/>
+  <rect x="15.6" y="9.3" width="5.4" height="4" rx="0.9" opacity="0.8"/>
+  <rect x="3" y="14.6" width="5" height="4" rx="0.9" opacity="0.6"/>
+  <rect x="9.3" y="14.6" width="5" height="4" rx="0.9" opacity="0.45"/>
+  <rect x="15.6" y="14.6" width="5.4" height="4" rx="0.9" opacity="0.35"/>
+</svg>

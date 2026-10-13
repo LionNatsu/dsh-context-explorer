@@ -111,8 +111,11 @@ language of the text, so read an estimated figure as composition, not as a bill.
 - **Editing the Host half needs a reload the Harness does not watch by default.**
   `index.js`, `serve.js` and `estimate.js` are imported when the process starts, and
   the shipped `hmr` row runs with `root: []`, which watches configuration rather than
-  source modules. So either restart, or give that row the directory to watch
-  (`- id: hmr` with `config: { root: ["…"] }`) in the profile patch. Installing,
+  source modules. Removing and re-adding the plugin reconciles the composition but
+  reuses the module already in memory, so it does not pick up an edit to the same
+  file either. Three things do: restart; give that row the directory to watch
+  (`- id: hmr` with `config: { root: ["…"] }`) in the profile patch; or install a
+  copy at a new path, which is what publishing a new version does. Installing,
   removing, enabling or disabling a plugin is a configuration change instead: with
   HMR present the manager applies it live and reports which happened
   (`application: applied`, otherwise `restart-required`). `client.js` is served

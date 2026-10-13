@@ -60,9 +60,13 @@ square paints the same size on any display scale. Hovering names the kind or
 kinds. Clicking a square opens the region that holds most of it.
 
 **The list.** One row per region, in the order the model sees them: colour swatch,
-a one-line preview, a `已截断` / clipped badge on a closed row whose fragment was
+a one-line summary, a `已截断` / clipped badge on a closed row whose fragment was
 cut, and the region's token figure with its share. A figure the provider counted is
-printed bare; this plugin's estimate carries `≈`. Clicking a row opens the region's
+printed bare; this plugin's estimate carries `≈`. The summary answers "what is this
+region" before it is opened, because the raw text often does not: a turn that only
+called tools is named by those calls (`list_agents`, `edit(…\package.json)`), a
+JSON result by its leading scalar fields (`timedOut: false`), anything else by its
+first line of prose. Clicking a row opens the region's
 own fragment of the prompt the model receives — role markers and all — rather than
 a summary of it; the badge gives way to `detail.clippedNote` in the body, so the
 fact is stated once. A count and a toggle switch the list between model order and size
@@ -102,7 +106,8 @@ language of the text, so read an estimated figure as composition, not as a bill.
   exist nowhere else, and the `## Tools` block. A message's fragment is capped at
   4000 UTF-16 code units and spent in the order the prompt spends it; a region whose
   fragment was cut is marked clipped and its expansion says only the beginning was
-  kept. The row's preview is bounded separately at 400 code units.
+  kept. The row's summary is bounded separately at 400 code units, and it is a
+  reading aid rather than the text: the region's own fragment is what the row opens.
 - **Host-half changes need a server restart.** `index.js`, `serve.js` and
   `estimate.js` are read when the DSH server starts, so restart `dsh web` after
   editing them. `client.js` is served through the client module system, which

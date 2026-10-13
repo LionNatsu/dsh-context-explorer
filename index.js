@@ -133,6 +133,122 @@ function isSurfaceEvent(event) {
   return event.surfaceOp !== undefined
 }
 
+/** Widest text whose JSON is worth reading as a summary rather than as a line. */
+const SUMMARY_JSON_LIMIT = 8192
+
+/** Collapse whitespace and cut to the row's budget. */
+function oneLine(text) {
+  const collapsed = text.replace(/\s+/g, ' ').trim()
+  return collapsed.length > ROW_LIMIT ? `${collapsed.slice(0, ROW_LIMIT - 1)}…` : collapsed
+}
+
+/** Whether one line is nothing but JSON punctuation, and so says nothing alone. */
+function isBarePunctuation(line) {
+  return /^[[\]{},;:]+$/.test(line)
+}
+
+/** The first line that carries words, for text whose shape is not JSON. */
+function firstMeaningfulLine(text) {
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed !== '' && !isBarePunctuation(trimmed)) return trimmed
+  }
+  return ''
+}
+
+/** A scalar shown as `key: value`, or null for a value that is not one. */
+function scalarOf(value) {
+  if (typeof value === 'string') return oneLine(value)
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (value === null) return 'null'
+  return null
+}
+
+/**
+ * Read one JSON payload as a line a reader can scan.
+ *
+ * Tool results are usually JSON, and their first characters (`{"messageId":…`)
+ * say nothing about what happened. The row therefore names the first few scalar
+ * fields instead, keeping nested values out of the summary. The region's own
+ * text is untouched: a reader who opens the row still sees exactly what the
+ * model received.
+ * @param text - the region's flat text.
+ * @returns the summary, or null when the text is not a JSON payload to read.
+ */
+function summarizeJson(text) {
+  const trimmed = text.trim()
+  if (trimmed.length === 0 || trimmed.length > SUMMARY_JSON_LIMIT) return null
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null
+  let payload
+  try {
+    payload = JSON.parse(trimmed)
+  } catch {
+    return null
+  }
+  if (Array.isArray(payload)) {
+    const first = payload.length === 0 ? null : scalarOf(payload[0])
+    return first === null ? `[${payload.length}]` : `[${payload.length}] ${first}`
+  }
+  if (typeof payload !== 'object' || payload === null) return null
+  const fields = []
+  for (const [key, value] of Object.entries(payload)) {
+    const scalar = scalarOf(value)
+    if (scalar !== null) fields.push(`${key}: ${scalar}`)
+    if (fields.length === 3) break
+  }
+  return fields.length === 0 ? null : fields.join(' · ')
+}
+
+/**
+ * Name the calls an assistant turn made, with the first scalar argument of a
+ * lone call: `list_agents` alone, `edit(D:\repo\…\package.json)` with a target.
+ */
+function summarizeCalls(calls) {
+  if (calls.length === 0) return null
+  if (calls.length > 1) return calls.map(call => call.name).join(' · ')
+  const call = calls[0]
+  let hint = null
+  try {
+    const parsed = JSON.parse(call.arguments)
+    if (typeof parsed === 'object' && parsed !== null) {
+      for (const value of Object.values(parsed)) {
+        const scalar = scalarOf(value)
+        if (scalar !== null) {
+          hint = scalar
+          break
+        }
+      }
+    } else {
+      hint = scalarOf(parsed)
+    }
+  } catch {
+    hint = call.arguments.trim() === '' ? null : oneLine(call.arguments)
+  }
+  return hint === null ? call.name : `${call.name}(${hint})`
+}
+
+/**
+ * The one line a list row carries.
+ *
+ * A row has to answer "what is this region" before it is opened: a call with no
+ * arguments reads as `{}` otherwise, and a JSON result as `{"messageId":…`.
+ * So a turn whose whole content is tool calls is named by those calls, JSON is
+ * read as its leading scalar fields, and anything else is its first line of
+ * prose.
+ * @param flat - the region's whole flat text.
+ * @param calls - the tool calls the message carried.
+ * @param hasProse - whether the message also carried text or reasoning.
+ * @returns the row's text.
+ */
+function rowTextOf(flat, calls, hasProse) {
+  if (!hasProse && calls.length > 0) return oneLine(summarizeCalls(calls) ?? '')
+  const json = summarizeJson(flat)
+  if (json !== null) return json
+  const line = oneLine(firstMeaningfulLine(flat))
+  if (line !== '') return line
+  return oneLine(summarizeCalls(calls) ?? '')
+}
+
 /**
  * The message one event derives to, mirroring the Session's own projection for
  * the original-content case: a live message projection applies only to model
@@ -153,6 +269,11 @@ function deriveEventMessage(event) {
     default:
       return null
   }
+}
+
+/** Whether a message carried text or reasoning of its own, beyond any calls. */
+function hasProse(content) {
+  return content.some(block => (block.type === 'text' || block.type === 'reasoning') && block.text.trim() !== '')
 }
 
 /**
@@ -199,12 +320,13 @@ function describeNode(seq, message) {
     // one; null while the only figure available is the estimate above.
     reported: null,
     // The row's own one-line material, and the pieces the served fragment is
-    // built from. `preview` flattens the message; the pieces keep the boundaries
-    // the prompt marks, which a flat string cannot recover. What the budget cut
-    // is recorded per piece rather than as a finished flag, because whether a
-    // piece is written at all depends on the thinking mode in force when the
-    // region is drawn, which is not necessarily the one in force now.
-    preview: flat.slice(0, ROW_LIMIT),
+    // built from. `preview` is a summary a reader can scan — the calls a turn
+    // made, the leading fields of a JSON result, or a first line of prose — while
+    // the pieces keep the boundaries the prompt marks, which a flat string cannot
+    // recover. What the budget cut is recorded per piece rather than as a
+    // finished flag, because whether a piece is written at all depends on the
+    // thinking mode in force when the region is drawn, not on the mode now.
+    preview: rowTextOf(flat, pieces.calls, hasProse(message.content)),
     reasoning: pieces.reasoning,
     text: pieces.text,
     calls: pieces.calls,

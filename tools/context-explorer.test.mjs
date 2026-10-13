@@ -323,10 +323,14 @@ console.log('a message region serves a capped fragment while the prompt travels 
   const { state, view } = fold([
     systemEvent(1, systemMessage(long)),
     toolResult(long, 2),
-    // A tool CALL carries no text block, only `arguments`, so it is the one
-    // message kind whose row preview depends on reading that field. Dropping it
-    // would show an empty row for every tool call in the list.
+    // A tool CALL carries no text block, only `arguments`, and a row that merely
+    // echoed those arguments read as `{}` for every call without any: a reader had
+    // to open the region to learn which tool ran. The row names the call instead.
     { type: 'assistant/message', seq: 3, surfaceOp: 'append', data: { turn: 1, step: 1, stream: [], message: { role: 'assistant', source: { kind: 'model' }, content: [{ type: 'tool-call', id: 'c', name: 'read', arguments: '{"path":"probe"}' }] } } },
+    { type: 'assistant/message', seq: 4, surfaceOp: 'append', data: { turn: 1, step: 1, stream: [], message: { role: 'assistant', source: { kind: 'model' }, content: [{ type: 'tool-call', id: 'd', name: 'list_agents', arguments: '{}' }] } } },
+    // A JSON tool result is the other half: the row reads its leading fields while
+    // the region still serves the payload byte for byte.
+    toolResult('{"timedOut":false,"count":2}', 5),
   ])
   const system = state.entries.find(entry => entry.kind === 'system')
   check(`the prompt keeps its whole text (${limit + 1000} chars) and the region serves all of it`,
@@ -337,8 +341,13 @@ console.log('a message region serves a capped fragment while the prompt travels 
   check(`a message region serves the first ${limit} chars of its text and no more`,
     view.regions[1].served.includes('x'.repeat(limit))
     && !view.regions[1].served.includes('x'.repeat(limit + 1)))
-  check('a tool call is previewed by its arguments, not left blank',
-    view.regions[2].preview === '{"path":"probe"}', JSON.stringify(view.regions[2].preview))
+  check('a call row names the call and its target, and a call with no arguments names the tool alone',
+    view.regions[2].preview === 'read(probe)' && view.regions[3].preview === 'list_agents',
+    `${JSON.stringify(view.regions[2].preview)} / ${JSON.stringify(view.regions[3].preview)}`)
+  check('a JSON result is summarized into the row while the region serves it unchanged',
+    view.regions[4].preview === 'timedOut: false · count: 2'
+    && view.regions[4].served.includes('{"timedOut":false,"count":2}'),
+    `${JSON.stringify(view.regions[4].preview)} over ${JSON.stringify(view.regions[4].served.slice(-30))}`)
 
   // `truncated` describes the served text, not the row's preview: the prompt
   // region serves everything and is complete while its row preview is a row, and

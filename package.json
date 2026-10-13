@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-explorer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "See the context a Session submits to its model in the DeepSeek Harness Web UI: the system prompt, the tool schemas and every message, drawn as a grid of token squares.",
   "license": "MIT",
   "author": "Lion Yang <lion@aosc.io> (https://github.com/LionNatsu)",

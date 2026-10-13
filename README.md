@@ -108,10 +108,15 @@ language of the text, so read an estimated figure as composition, not as a bill.
   fragment was cut is marked clipped and its expansion says only the beginning was
   kept. The row's summary is bounded separately at 400 code units, and it is a
   reading aid rather than the text: the region's own fragment is what the row opens.
-- **Host-half changes need a server restart.** `index.js`, `serve.js` and
-  `estimate.js` are read when the DSH server starts, so restart `dsh web` after
-  editing them. `client.js` is served through the client module system, which
-  reloads the browser half without a restart.
+- **Editing the Host half needs a reload the Harness does not watch by default.**
+  `index.js`, `serve.js` and `estimate.js` are imported when the process starts, and
+  the shipped `hmr` row runs with `root: []`, which watches configuration rather than
+  source modules. So either restart, or give that row the directory to watch
+  (`- id: hmr` with `config: { root: ["…"] }`) in the profile patch. Installing,
+  removing, enabling or disabling a plugin is a configuration change instead: with
+  HMR present the manager applies it live and reports which happened
+  (`application: applied`, otherwise `restart-required`). `client.js` is served
+  through the client module system, which reloads the browser half on its own.
 - **No automated visual check.** The suites cover the fold, the wire, the browser
   helpers, the packaging and the prompt text; nothing renders the panel in a
   browser, so its layout is checked by hand.

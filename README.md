@@ -5,6 +5,13 @@ model: the rendered system prompt, the tool schemas, and every message, drawn as
 a grid of token squares. It appears as a tab in the Web UI's right sidebar,
 titled 上下文 / Context.
 
+![The Context Explorer tab in the right sidebar: a headline, the composition chips, the grid of squares and the region list, with one region expanded to its text](docs/screenshots/panel.png)
+
+One square is one slice of the context window, painted with the kind of content
+holding most of it; the dark squares past the end are free space. Above the grid,
+the chips are the legend and the filter; below it, every region is a row, and a
+row opens the text the model receives for that region.
+
 This is an unofficial third-party plugin, not affiliated with or endorsed by
 DeepSeek. MIT licensed — see [`LICENSE`](LICENSE); [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 records the two files reproduced from DeepSeek projects (`estimate.js`, `serve.js`).
@@ -15,6 +22,11 @@ records the two files reproduced from DeepSeek projects (`estimate.js`, `serve.j
 dsh plugin --profile <name> add dsh-context-explorer
 ```
 
+![The Plugins page: Add plugin, the package name typed in, then Install](docs/screenshots/install.png)
+
+The same install is available from the Web UI's Plugins page: **Add plugin**,
+then the package name, a GitHub address, or a local directory path.
+
 `dsh plugin` forwards its arguments to pnpm in that profile, so the flag names the
 profile to install into. The package declares `dsh.bundle.patch` →
 `./cordis.patch.yml`, so the profile loader applies its one host row the next time
@@ -24,7 +36,8 @@ step and no install script, so a `github:` install needs no build permission. No
 per language (上下文浏览器 / Context Explorer). Verified against
 `@deepseek-ai/dsh` 0.2.0-rc.2; the plugin declares no version gate, so a Harness
 release that moves these extension points would show up as a missing or empty
-panel rather than a refused install.
+panel rather than a refused install. A Host-half change needs a server restart;
+the browser half reloads on its own.
 
 ## What the panel shows
 
@@ -111,6 +124,7 @@ One npm package, one plugin, both halves in it:
 | `package.json`, `cordis.patch.yml` | Manifest and the bundle patch (one host row) |
 | `icon.svg`, `locale/*.json` | The mark, and the name and description per language |
 | `docs/prompt-injection-format.md` | How a Harness conversation becomes prompt text |
+| `docs/screenshots/` | The two images above, kept out of the published tarball |
 | `tools/` | Checks and diagnostics |
 
 The host half imports nothing but its sibling `estimate.js` and `serve.js`, which
